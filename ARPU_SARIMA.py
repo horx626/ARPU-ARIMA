@@ -77,7 +77,7 @@ def adf_test(data):
     # print('p-value:', adf_result[1])
     # print('Critical Values:', adf_result[4])
     return adf_result
-# 参数选择：通过最小aic来选择范围内最适合的p、d、q参数
+# 参数选择：通过最小aic&bic来选择范围内最适合的SARIMA参数
 #     参数:
 #     p_num(num):用于p参数的最大循环数
 #     data(pandas.core.series.Series): 要处理的数据集
@@ -91,10 +91,8 @@ def loop_select_six_param():
     s = 7  # 季节性周期长度
     # 创建所有参数组
     parameters = list(itertools.product(p, d, q, P, D, Q))
-
     # 用于存储结果
     results = []
-
     # 遍历所有参数组合
     for param in parameters:
         try:
@@ -125,6 +123,15 @@ def loop_select_six_param():
     results_df = pd.DataFrame(results)
     best_model = results_df.loc[results_df['aic'].idxmin()]
     print("最佳模型参数：", best_model)
+    return best_model
+# 参数选择：通过最小aic来选择范围内最适合的p、d、q参数
+#     参数:
+#     p_num(num):用于p参数的最大循环数
+#     data(pandas.core.series.Series): 要处理的数据集
+#     返回:
+#     null
+#     示例:
+#     loop_select_param(3,3,3,data)
 def loop_select_param(p_num,d_num,q_num,data):
     best_aic = float('inf')
     best_order = None
@@ -142,6 +149,15 @@ def loop_select_param(p_num,d_num,q_num,data):
                     continue
     print('最佳 ARIMA 模型参数:', best_order)
     return best_order
+# 参数选择：构建ARIMA模型并拟合
+#     参数:
+#     p_num(num):用于p参数的最大循环数
+#     data(pandas.core.series.Series): 要处理的数据集
+#     pdq_data(arr):ARIMA模型的pdq参数
+#     返回:
+#     model_fit(pandas.core.series.Series): 被处理的数据集
+#     示例:
+#     SARIMA_fit(data)
 def SARIMA_fit(P_num,D_num,Q_num,s_num,data,pdq_data):
     model = SARIMAX(data,
                     order=(pdq_data[0], pdq_data[1], pdq_data[2]),
@@ -256,7 +272,7 @@ ARPU_data=data_partiton(ts,0.8)
 clearData=data_clear(ARPU_data[0])
 diffData=data_diff(clearData)
 adfResult=adf_test(clearData)
-# loop_select_six_param()
+# best_pdq=loop_select_six_param()
 # best_pdq=loop_select_param(3,3,3,clearData)   #性能消耗较大
 best_pdq=[1,1,1]
 fitData= SARIMA_fit(0,1,1,7,clearData,best_pdq)
